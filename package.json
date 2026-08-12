@@ -9,8 +9,22 @@
   "files": [
     "resize-iframe.js",
     "resize-iframe-child.js",
-    "resize-iframe.d.ts"
+    "resize-iframe.d.ts",
+    "CHANGELOG.md"
   ],
+  "packageManager": "pnpm@11.21.0",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "typecheck": "tsc --noEmit --strict --lib es2022,dom resize-iframe.d.ts",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "changeset publish"
+  },
   "keywords": [
     "iframe",
     "iframe-resizer",
@@ -23,16 +37,16 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/jagreehal/resize-iframe"
+    "url": "git+https://github.com/jagreehal/resize-iframe.git"
   },
+  "homepage": "https://github.com/jagreehal/resize-iframe#readme",
+  "bugs": "https://github.com/jagreehal/resize-iframe/issues",
   "author": "Jag Reehal <jag@jagreehal.com>",
   "license": "MIT",
   "devDependencies": {
+    "@changesets/cli": "2.31.0",
     "@playwright/test": "1.60.0",
-    "serve": "14.2.6"
-  },
-  "scripts": {
-    "test": "playwright test",
-    "test:ui": "playwright test --ui"
+    "serve": "14.2.6",
+    "typescript": "6.0.3"
   }
 }
