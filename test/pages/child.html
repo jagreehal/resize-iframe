@@ -1,0 +1,14 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>child</title>
+<style>
+  body { margin: 0; }
+  #box { background: #cceeff; }
+</style>
+<div id="box" style="height: 300px; width: 250px"></div>
+<script>
+  onmessage = (event) => {
+    if (event.data?.echo) parentIframe.sendMessage(`echo:${event.data.echo}`);
+  };
+</script>
+<script src="../../resize-iframe-child.js"></script>

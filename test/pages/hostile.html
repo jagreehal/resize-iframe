@@ -1,0 +1,9 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>hostile frame</title>
+<script>
+  // A frame the parent never bound to, trying to drive the sizing of one it did.
+  setInterval(() => {
+    parent.postMessage({ 'resize-iframe': { height: 9999, width: 9999 } }, '*');
+  }, 50);
+</script>

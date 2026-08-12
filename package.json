@@ -1,0 +1,38 @@
+{
+  "name": "resize-iframe",
+  "version": "0.1.0",
+  "description": "Iframes that size themselves to their content, cross-origin included. No build step, no dependencies.",
+  "type": "module",
+  "main": "resize-iframe.js",
+  "module": "resize-iframe.js",
+  "types": "resize-iframe.d.ts",
+  "files": [
+    "resize-iframe.js",
+    "resize-iframe-child.js",
+    "resize-iframe.d.ts"
+  ],
+  "keywords": [
+    "iframe",
+    "iframe-resizer",
+    "resize",
+    "web-components",
+    "custom-element",
+    "postmessage",
+    "storage-access",
+    "third-party-cookies"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jagreehal/resize-iframe"
+  },
+  "author": "Jag Reehal <jag@jagreehal.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "1.60.0",
+    "serve": "14.2.6"
+  },
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui"
+  }
+}

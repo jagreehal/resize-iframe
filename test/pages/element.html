@@ -1,0 +1,25 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>element parent</title>
+<style>
+  body { margin: 0; }
+  resize-iframe { display: block; width: 100%; }
+</style>
+<script type="module" src="../../resize-iframe.js"></script>
+<script type="module">
+  const query = new URLSearchParams(location.search);
+  const childOrigin = query.get('childOrigin') ?? 'http://127.0.0.1:9332';
+
+  window.__events = [];
+  const frame = document.createElement('resize-iframe');
+  for (const [name, value] of query) {
+    if (name !== 'child' && name !== 'childOrigin') frame.setAttribute(name, value);
+  }
+  frame.setAttribute('src', `${childOrigin}/test/pages/${query.get('child') ?? 'child.html'}`);
+
+  for (const type of ['ready', 'resize', 'frame-message', 'storage-access']) {
+    frame.addEventListener(type, (e) => window.__events.push({ type, ...e.detail }));
+  }
+  document.body.append(frame);
+  window.__frame = frame;
+</script>

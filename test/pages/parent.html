@@ -1,0 +1,50 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>parent</title>
+<style>
+  body { margin: 0; }
+  iframe { display: block; width: 100%; height: 100vh; border: 0; }
+</style>
+<iframe id="frame" title="Embedded content"></iframe>
+<script type="module">
+  import { iframeResize } from '../../resize-iframe.js';
+
+  const query = new URLSearchParams(location.search);
+  const childOrigin = query.get('childOrigin') ?? 'http://127.0.0.1:9332';
+
+  // Specs read this to assert callbacks fired, in order, with what payload.
+  window.__events = [];
+  const log = (type, detail = {}) => window.__events.push({ type, ...detail });
+
+  window.__handle = iframeResize(
+    {
+      direction: query.get('direction') ?? 'vertical',
+      offsetSize: Number(query.get('offset') ?? 0),
+      warningTimeout: Number(query.get('warn') ?? 5000),
+      onReady: () => log('ready'),
+      onResized: ({ height, width }) => log('resized', { height, width }),
+      onMessage: ({ message }) => log('message', { message }),
+      onStorageAccess: ({ hasAccess }) => log('storage', { hasAccess }),
+    },
+    '#frame'
+  )[0];
+
+  frame.addEventListener('frame-message', (e) => log('event:frame-message', { message: e.detail }));
+  frame.addEventListener('ready', () => log('event:ready'));
+
+  frame.src = `${childOrigin}/test/pages/${query.get('child') ?? 'child.html'}`;
+
+  if (query.has('hostile')) {
+    // Proof the spoofs reached this page, so a spec can tell "rejected" apart
+    // from "not delivered yet" without sleeping.
+    addEventListener('message', (e) => {
+      if (e.data?.['resize-iframe']?.height === 9999) log('hostile-seen');
+    });
+
+    const hostile = document.createElement('iframe');
+    hostile.title = 'Hostile frame';
+    hostile.style.cssText = 'width:1px;height:1px';
+    hostile.src = `${childOrigin}/test/pages/hostile.html`;
+    document.body.append(hostile);
+  }
+</script>
