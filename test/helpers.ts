@@ -22,6 +22,7 @@ declare global {
       sendMessage(message: unknown, targetOrigin?: string): void;
     };
     parentIframe: {
+      onMessage: ((message: any) => void) | null;
       autoResize(state?: boolean): boolean;
       resize(): void;
       sendMessage(message: unknown, targetOrigin?: string): void;

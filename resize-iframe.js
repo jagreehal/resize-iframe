@@ -88,8 +88,10 @@ function connect(iframe, settings) {
       clearTimeout(warning);
       delete iframe.iframeResizer;
     },
+    // Same envelope the child sends back in, so the framed page can tell an
+    // embedder message from every other script posting at it.
     sendMessage(message, targetOrigin = '*') {
-      iframe.contentWindow?.postMessage(message, targetOrigin);
+      iframe.contentWindow?.postMessage({ 'resize-iframe-message': message }, targetOrigin);
     },
   };
   return iframe.iframeResizer;

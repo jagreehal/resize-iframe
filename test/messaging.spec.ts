@@ -59,6 +59,27 @@ test.describe('messaging and lifecycle', () => {
       .toContain('echo:ping');
   });
 
+  test('ignores an unenveloped message posted straight at the child', async ({ page }) => {
+    const frame = await openParent(page);
+    await expect(frame).toHaveCSS('height', '300px');
+
+    // Every other script on the page can postMessage into the frame too. Only the
+    // envelope tells parentIframe.onMessage which ones are the embedder's.
+    await page.evaluate(() => {
+      const iframe = document.querySelector('#frame') as HTMLIFrameElement;
+      iframe.contentWindow?.postMessage({ echo: 'raw' }, '*');
+    });
+    await page.evaluate(() => window.__handle.sendMessage({ echo: 'ping' }));
+
+    // Assert on the enveloped one landing, so the raw one has had its chance.
+    await expect
+      .poll(async () =>
+        (await events(page)).filter((e) => e.type === 'message').map((e) => e.message)
+      )
+      .toContain('echo:ping');
+    expect((await events(page)).map((e) => e.message)).not.toContain('echo:raw');
+  });
+
   test('autoResize(false) pauses sizing and autoResize(true) resumes it', async ({ page }) => {
     const frame = await openParent(page);
     await expect(frame).toHaveCSS('height', '300px');

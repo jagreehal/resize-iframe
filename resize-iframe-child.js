@@ -12,6 +12,7 @@ const start = () => {
   let last = { height: 0, width: 0 };
   let queued = false;
   let auto = true;
+  let inbound = null;
 
   // Measure the bottom and right edges of the marked elements, or of body's
   // children. Never body itself: it stretches to fill the frame in quirks mode
@@ -64,6 +65,18 @@ const start = () => {
   });
   addEventListener('load', schedule); // images and fonts landing late
 
+  // Messages from the embedder. event.source is set by the browser and cannot be
+  // forged, so this is the same guard the parent uses in the other direction, and
+  // the envelope keeps unrelated postMessage traffic (analytics, wallets, other
+  // embeds) out of the callback.
+  addEventListener('message', (event) => {
+    if (event.source !== parent) return;
+    const data = event.data;
+    if (data && typeof data === 'object' && 'resize-iframe-message' in data) {
+      inbound?.(data['resize-iframe-message']);
+    }
+  });
+
   // Third-party cookies: an embedded page gets partitioned storage until the user
   // grants access. Probe the API rather than sniffing the browser — Safari and
   // Chrome both partition, and which browsers do is not a stable list.
@@ -77,6 +90,13 @@ const start = () => {
   };
 
   window.parentIframe = {
+    // Assign a function to receive what the parent sends with sendMessage().
+    get onMessage() {
+      return inbound;
+    },
+    set onMessage(fn) {
+      inbound = fn;
+    },
     autoResize(state) {
       if (state !== undefined) auto = state;
       if (auto) schedule();
