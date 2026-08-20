@@ -6,9 +6,13 @@
   #box { background: #cceeff; }
 </style>
 <div id="box" style="height: 300px; width: 250px"></div>
-<script>
-  onmessage = (event) => {
-    if (event.data?.echo) parentIframe.sendMessage(`echo:${event.data.echo}`);
-  };
-</script>
 <script src="../../resize-iframe-child.js"></script>
+<script>
+  // Guarded because this page is also served top-level by the webServer health
+  // check, where there is no embedder and so no parentIframe.
+  if (window.parentIframe) {
+    parentIframe.onMessage = (message) => {
+      if (message?.echo) parentIframe.sendMessage(`echo:${message.echo}`);
+    };
+  }
+</script>

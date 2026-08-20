@@ -181,9 +181,15 @@ frame.sendMessage({ hello: 'world' }, 'https://anotherdomain.com');
 frame.disconnect(); // call before removing the iframe from the page
 ```
 
+Both directions travel in the same envelope, so `parentIframe.onMessage` only ever
+sees what the embedder sent — not the postMessage traffic every other script on the
+page also aims at your frame. A plain `addEventListener('message', …)` in the child
+would have to sort that out itself.
+
 Child, on `window.parentIframe`:
 
 ```javascript
+parentIframe.onMessage = (message) => { … }; // ← parent's sendMessage
 parentIframe.sendMessage('ping'); // → parent's onMessage / 'frame-message' event
 parentIframe.autoResize(false); // pause resizing; returns the current state
 parentIframe.resize(); // nudge, for a change neither observer sees
@@ -227,20 +233,10 @@ pnpm exec playwright install
 pnpm test
 ```
 
-33 Playwright specs across Chromium, Firefox and WebKit. The suite serves the
+34 Playwright specs across Chromium, Firefox and WebKit. The suite serves the
 parent page and the child pages from two different origins — `localhost` and
 `127.0.0.1`, which are cross-*site*, not merely cross-origin — so every test runs
 against the same partitioning and `contentDocument` restrictions as production.
-
-## Testing
-
-```bash
-pnpm install
-pnpm exec playwright install
-pnpm test
-```
-
-21 Playwright specs, run across Chromium, Firefox and WebKit.
 
 ## Browser Support
 

@@ -32,6 +32,8 @@ export function iframeResize(
 
 /** Available inside the framed page once resize-iframe-child.js has loaded. */
 export interface ParentIframe {
+  /** Called with whatever the parent sends via `sendMessage`. Assign to subscribe. */
+  onMessage: ((message: unknown) => void) | null;
   autoResize(state?: boolean): boolean;
   resize(): void;
   sendMessage(message: unknown, targetOrigin?: string): void;
