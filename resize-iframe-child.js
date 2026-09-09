@@ -42,13 +42,16 @@ const start = () => {
   const post = () => {
     queued = false;
     const size = measure();
+    // Skip unchanged sizes: spares the parent a re-render per frame, and breaks
+    // the loop where resizing the frame resizes a stretched body that reported it.
+    // Only works with content-based measure() above — together they keep it stable.
     if (size.height === last.height && size.width === last.width) return;
     last = size;
     parent.postMessage({ 'resize-iframe': size }, targetOrigin);
   };
 
-  // Batch to one measurement per frame: mutations arrive in bursts and every
-  // measure() forces a layout.
+  // Batch to one measurement per animation frame: mutations arrive in bursts and
+  // every measure() forces a layout.
   const schedule = () => {
     if (queued || !auto) return;
     queued = true;
@@ -56,8 +59,9 @@ const start = () => {
   };
 
   // ResizeObserver catches reflow (images, fonts, viewport). MutationObserver
-  // catches DOM and style changes, which the observer misses entirely whenever
-  // body is stretched to the frame and so never changes size itself.
+  // catches content appearing or style changes — a quiz reveal, a chart finishing —
+  // which ResizeObserver misses entirely when body is stretched to the frame and
+  // so never changes size itself.
   new ResizeObserver(schedule).observe(document.body);
   new MutationObserver(schedule).observe(document.body, {
     subtree: true,

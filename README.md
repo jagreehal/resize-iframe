@@ -19,11 +19,12 @@ resizing, messaging, and refusing to be read from the parent.
 npm install resize-iframe
 ```
 
-Or from a CDN — the parent page needs `resize-iframe.js`, the framed page needs
-`resize-iframe-child.js`:
+Or from a CDN — the parent page needs the parent script, the framed page needs
+`resize-iframe-child.js`. Use `element.js` when you want `<resize-iframe>`, or
+`resize-iframe.js` when you only call `iframeResize()`:
 
 ```html
-<script type="module" src="https://unpkg.com/resize-iframe/resize-iframe.js"></script>
+<script type="module" src="https://unpkg.com/resize-iframe/element.js"></script>
 <script src="https://unpkg.com/resize-iframe/resize-iframe-child.js"></script>
 ```
 
@@ -51,10 +52,12 @@ content below the iframe only appears once it has sized itself.
 elements, and returns one handle per iframe. Both arguments are optional — with no
 target it binds every iframe on the page.
 
-Or use the element, which calls `iframeResize` for you:
+Or use the element, which calls `iframeResize` for you. Import
+`resize-iframe/element` — the main entry is side-effect-free so SSR can load
+`iframeResize` without touching `HTMLElement`:
 
 ```html
-<script type="module" src="https://unpkg.com/resize-iframe/resize-iframe.js"></script>
+<script type="module" src="https://unpkg.com/resize-iframe/element.js"></script>
 
 <resize-iframe src="https://anotherdomain.com/iframe.html" title="Pricing table"></resize-iframe>
 ```
@@ -77,7 +80,7 @@ put the child script inside it with `withResizeChild` and pass the result as
 
 ```html
 <script type="module">
-  import 'resize-iframe';
+  import 'resize-iframe/element';
   import { withResizeChild } from 'resize-iframe/inject';
 
   const frame = document.createElement('resize-iframe');

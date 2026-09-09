@@ -19,7 +19,7 @@ The document stays self-contained: no CDN, no path back to the package.
 
 ```html
 <script type="module">
-  import 'resize-iframe';
+  import 'resize-iframe/element';
   import { withResizeChild } from 'resize-iframe/inject';
 
   const frame = document.createElement('resize-iframe');
@@ -44,7 +44,7 @@ Add one script tag to that page. Nothing else.
 Then on the host page, either the element or the function:
 
 ```html
-<script type="module" src="https://unpkg.com/resize-iframe/resize-iframe.js"></script>
+<script type="module" src="https://unpkg.com/resize-iframe/element.js"></script>
 <resize-iframe src="https://embed.example/widget" title="Pricing table"></resize-iframe>
 ```
 

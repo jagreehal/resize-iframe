@@ -26,8 +26,10 @@ test.describe('sizing', () => {
     await expect(frame).toHaveCSS('height', '200px');
   });
 
-  // Regression: measuring body ratchets, because body stretches to the frame in
-  // quirks mode and under height:100%, so the frame could only ever grow.
+  // Content-based measure: measuring body itself ratchets, because body stretches
+  // to the frame in quirks mode and under height:100%, so the frame could only
+  // ever grow. MutationObserver is what sees the style change — body size does
+  // not move, so ResizeObserver alone never fires.
   test('shrinks even when the child page stretches its body to the frame', async ({ page }) => {
     const frame = await openParent(page, { child: 'child-quirks.html' });
     await expect(frame).toHaveCSS('height', '300px');
@@ -35,6 +37,44 @@ test.describe('sizing', () => {
     await styleInChild(page, '#box', { height: '150px' });
 
     await expect(frame).toHaveCSS('height', '150px');
+  });
+
+  // MutationObserver teeth: content appears under a stretched body. Body stays
+  // the frame's height, so ResizeObserver sees nothing; without the mutation
+  // observer a quiz reveal or chart finish would never resize the frame.
+  test('grows when content appears in a stretched body', async ({ page }) => {
+    const frame = await openParent(page, { child: 'child-quirks.html' });
+    await expect(frame).toHaveCSS('height', '300px');
+
+    await page.frameLocator('#frame').locator('body').evaluate((body) => {
+      const extra = document.createElement('div');
+      extra.style.height = '200px';
+      body.append(extra);
+    });
+
+    await expect(frame).toHaveCSS('height', '500px');
+  });
+
+  // Skip-unchanged + content measure: a no-op mutation still schedules a
+  // measure, but must not post. Without the skip, a stretched body + ResizeObserver
+  // feedback loop re-posts every frame after the parent applies a height.
+  test('does not re-post when the measured size is unchanged', async ({ page }) => {
+    const frame = await openParent(page, { child: 'child-quirks.html' });
+    await expect(frame).toHaveCSS('height', '300px');
+
+    const resizedBefore = (await events(page)).filter((event) => event.type === 'resized').length;
+
+    await page.frameLocator('#frame').locator('#box').evaluate((element) => {
+      element.setAttribute('data-noop', '1');
+    });
+    await page.evaluate(
+      () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    );
+
+    expect((await events(page)).filter((event) => event.type === 'resized').length).toBe(
+      resizedBefore
+    );
+    await expect(frame).toHaveCSS('height', '300px');
   });
 
   test('measures only the elements marked data-iframe-size', async ({ page }) => {

@@ -134,7 +134,7 @@
   </div>
 
   <h3>The whole integration</h3>
-<pre><code>&lt;script type="module" src="resize-iframe.js"&gt;&lt;/script&gt;
+<pre><code>&lt;script type="module" src="element.js"&gt;&lt;/script&gt;
 &lt;resize-iframe src="https://embed.example/widget" max-h="420px"&gt;&lt;/resize-iframe&gt;
 
 &lt;!-- and in the framed page --&gt;
@@ -202,7 +202,7 @@ frame.disconnect();            // before you remove the iframe</code></pre>
   </div>
 
   <h3>What that takes</h3>
-<pre><code>import 'resize-iframe';
+<pre><code>import 'resize-iframe/element';
 import { withResizeChild } from 'resize-iframe/inject';
 
 const frame = document.createElement('resize-iframe');
@@ -229,7 +229,7 @@ document.body.append(frame);</code></pre>
     </div>
     <div>
       <h3>Catches late changes</h3>
-      <p>A ResizeObserver picks up reflow from images and fonts; a MutationObserver picks up DOM and style changes, batched to one measurement per frame.</p>
+      <p>ResizeObserver for reflow; MutationObserver for content that appears inside a stretched body. Batched to one measure per frame, and an unchanged size is never posted — that pair is what keeps a height:100% body from feedback-looping.</p>
     </div>
     <div>
       <h3>Ignores everyone else</h3>
@@ -248,7 +248,7 @@ document.body.append(frame);</code></pre>
     <thead><tr><th>In the parent</th><th>What it does</th></tr></thead>
     <tbody>
       <tr><td><code>iframeResize(options, target)</code></td><td>Connect one iframe, a selector, a list, or every iframe on the page.</td></tr>
-      <tr><td><code>&lt;resize-iframe src&gt;</code></td><td>Same thing as an element. Also takes <code>srcdoc</code>, <code>min-h</code>, <code>max-h</code>, <code>direction</code>, <code>offset-size</code>, <code>warning-timeout</code>, <code>allow</code>, <code>sandbox</code>.</td></tr>
+      <tr><td><code>&lt;resize-iframe src&gt;</code></td><td>Same thing as an element — import <code>resize-iframe/element</code>. Also takes <code>srcdoc</code>, <code>min-h</code>, <code>max-h</code>, <code>direction</code>, <code>offset-size</code>, <code>warning-timeout</code>, <code>allow</code>, <code>sandbox</code>.</td></tr>
       <tr><td><code>withResizeChild(html)</code></td><td>From <code>resize-iframe/inject</code>. Inlines the child script into HTML you own, ready for <code>srcdoc</code>.</td></tr>
       <tr><td><code>onReady</code> / <code>onResized</code></td><td>Callbacks, or listen for the <code>ready</code> and <code>resize</code> events on the iframe.</td></tr>
       <tr><td><code>onMessage</code> / <code>sendMessage()</code></td><td>Two-way messaging on an envelope other postMessage traffic will not match.</td></tr>
@@ -276,7 +276,7 @@ document.body.append(frame);</code></pre>
   library straight from this repo — <a href="https://github.com/jagreehal/resize-iframe">read the source</a>.
 </footer>
 
-<script type="module" src="./resize-iframe.js"></script>
+<script type="module" src="./element.js"></script>
 <script type="module">
   import { iframeResize } from './resize-iframe.js';
   import { withResizeChild } from './inject.js';

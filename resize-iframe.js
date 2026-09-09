@@ -1,7 +1,8 @@
 // Iframes that size themselves to their content, cross-origin included.
-// Two ways in: iframeResize(options, target) for existing iframes, or the
-// <resize-iframe src="..."> element. Both need resize-iframe-child.js in the
-// framed page — a cross-origin parent cannot measure the content itself.
+// Side-effect-free: import { iframeResize } from 'resize-iframe' is safe under
+// SSR. For the <resize-iframe> element, import 'resize-iframe/element' instead.
+// Both need resize-iframe-child.js in the framed page — a cross-origin parent
+// cannot measure the content itself.
 const DEFAULTS = {
   direction: 'vertical', // 'vertical' | 'horizontal' | 'both' | 'none'
   offsetSize: 0,
@@ -96,67 +97,3 @@ function connect(iframe, settings) {
   };
   return iframe.iframeResizer;
 }
-
-class ResizeIframe extends HTMLElement {
-  static get observedAttributes() {
-    // src / srcdoc last: setting either starts the navigation, and sandbox/allow
-    // have to be on the element before that or the first load runs without them.
-    return ['min-h', 'max-h', 'allow', 'sandbox', 'warning-timeout', 'srcdoc', 'src'];
-  }
-
-  connectedCallback() {
-    if (!this.shadowRoot) {
-      this.attachShadow({ mode: 'open' }).innerHTML = `
-        <style>
-          :host { display: block; }
-          iframe { display: block; width: 100%; border: 0; }
-        </style>
-        <iframe part="frame"></iframe>`;
-      this.iframe = this.shadowRoot.querySelector('iframe');
-      // An iframe without an accessible name is a screen reader dead end.
-      this.iframe.title = this.getAttribute('title') || 'Embedded content';
-      for (const name of ResizeIframe.observedAttributes) {
-        this.attributeChangedCallback(name, null, this.getAttribute(name));
-      }
-    }
-    const warningTimeoutAttr = this.getAttribute('warning-timeout');
-    iframeResize(
-      {
-        direction: this.getAttribute('direction') || DEFAULTS.direction,
-        offsetSize: Number(this.getAttribute('offset-size')) || 0,
-        ...(warningTimeoutAttr !== null
-          ? { warningTimeout: Number(warningTimeoutAttr) }
-          : {}),
-      },
-      this.iframe
-    );
-  }
-
-  disconnectedCallback() {
-    this.iframe?.iframeResizer?.disconnect();
-  }
-
-  attributeChangedCallback(name, oldValue, newValue) {
-    if (!this.iframe || newValue === null) return;
-    // srcdoc wins over src when both are set (HTML behaviour). Prefer one.
-    if (name === 'srcdoc') this.iframe.srcdoc = newValue;
-    if (name === 'src') this.iframe.src = newValue;
-    if (name === 'min-h') this.iframe.style.minHeight = newValue;
-    if (name === 'max-h') this.iframe.style.maxHeight = newValue;
-    // Passed through because third-party embeds need them: storage access is
-    // denied outright unless the frame carries allow="storage-access", and a
-    // sandboxed frame also needs allow-storage-access-by-user-activation.
-    if (name === 'allow' || name === 'sandbox') this.iframe.setAttribute(name, newValue);
-    // warning-timeout is read once, in connectedCallback.
-  }
-
-  get height() {
-    return this.iframe?.style.height;
-  }
-
-  sendMessage(message, targetOrigin) {
-    this.iframe?.iframeResizer?.sendMessage(message, targetOrigin);
-  }
-}
-
-customElements.define('resize-iframe', ResizeIframe);
