@@ -2,3 +2,5 @@ node_modules
 *.tgz*
 test-results
 playwright-report
+.pnpm-store
+.claude/.cc-writes

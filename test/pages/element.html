@@ -7,15 +7,28 @@
 </style>
 <script type="module" src="../../resize-iframe.js"></script>
 <script type="module">
+  import { withResizeChild } from '../../inject.js';
+
   const query = new URLSearchParams(location.search);
   const childOrigin = query.get('childOrigin') ?? 'http://127.0.0.1:9332';
+  const mode = query.get('mode') ?? 'src';
 
   window.__events = [];
   const frame = document.createElement('resize-iframe');
   for (const [name, value] of query) {
-    if (name !== 'child' && name !== 'childOrigin') frame.setAttribute(name, value);
+    if (name === 'child' || name === 'childOrigin' || name === 'mode' || name === 'srcdoc') continue;
+    frame.setAttribute(name, value);
   }
-  frame.setAttribute('src', `${childOrigin}/test/pages/${query.get('child') ?? 'child.html'}`);
+
+  if (mode === 'srcdoc') {
+    // Inline HTML the parent owns: inject the child so the opaque frame can report size.
+    const raw =
+      query.get('srcdoc') ??
+      '<div id="box" style="height:300px;background:#ddd">srcdoc</div>';
+    frame.setAttribute('srcdoc', withResizeChild(raw));
+  } else {
+    frame.setAttribute('src', `${childOrigin}/test/pages/${query.get('child') ?? 'child.html'}`);
+  }
 
   for (const type of ['ready', 'resize', 'frame-message', 'storage-access']) {
     frame.addEventListener(type, (e) => window.__events.push({ type, ...e.detail }));

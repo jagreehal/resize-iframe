@@ -34,6 +34,18 @@ test.describe('<resize-iframe> element', () => {
     await expect(frame).toHaveCSS('height', '300px');
   });
 
+  test('sandboxes the frame before its src loads', async ({ page }) => {
+    // A same-origin child, so the sandbox attribute is the only thing that can
+    // make the frame opaque. No allow-same-origin means it should be: if sandbox
+    // landed after src, the first load would have escaped it and stayed readable.
+    const frame = await openElement(page, { childOrigin: '', sandbox: 'allow-scripts' });
+
+    await expect(frame).toHaveCSS('height', '300px');
+    expect(
+      await frame.evaluate((element: HTMLIFrameElement) => element.contentDocument === null)
+    ).toBe(true);
+  });
+
   test('caps the frame at max-h', async ({ page }) => {
     const frame = await openElement(page, { 'max-h': '100px' });
 
@@ -87,5 +99,35 @@ test.describe('<resize-iframe> element', () => {
     });
 
     expect(stillBound).toBe(false);
+  });
+
+  test('sizes a sandboxed srcdoc frame when the child is injected', async ({ page }) => {
+    // story.html / report embeds: inline HTML, opaque origin, no allow-same-origin.
+    // withResizeChild (used by element.html in mode=srcdoc) puts the child inside.
+    const frame = await openElement(page, {
+      mode: 'srcdoc',
+      sandbox: 'allow-scripts',
+      srcdoc:
+        '<style>body{margin:0}</style><div id="box" style="height:240px;background:#ddd">inline</div>',
+    });
+
+    await expect(frame).toHaveCSS('height', '240px');
+    expect(
+      await frame.evaluate((element: HTMLIFrameElement) => element.contentDocument === null)
+    ).toBe(true);
+  });
+
+  test('sizes a srcdoc fragment that is nothing but text', async ({ page }) => {
+    const frame = await openElement(page, {
+      mode: 'srcdoc',
+      sandbox: 'allow-scripts',
+      srcdoc: 'just text, no elements at all',
+    });
+
+    // A line of text, not the 150px the browser gives an unsized frame.
+    await expect
+      .poll(async () => Number.parseFloat(await inlineHeight(frame)) || 0)
+      .toBeGreaterThan(0);
+    expect(Number.parseFloat(await inlineHeight(frame))).toBeLessThan(60);
   });
 });
