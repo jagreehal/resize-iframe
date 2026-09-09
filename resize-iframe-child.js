@@ -1,5 +1,7 @@
-// Load this inside the framed page:
-//   <script src=".../resize-iframe-child.js"></script>
+// Load this inside the framed page as a classic script, e.g.
+//   <script src=".../resize-iframe-child.js"><\/script>
+// (Written with an escaped closer so the file can also be inlined into a
+// parent <script> without the HTML parser cutting the tag short.)
 // Optional attributes on that script tag:
 //   data-parent-origin="https://parent.example"  report size only to that embedder
 //   data-size-selector=".content"                measure these elements instead
@@ -18,8 +20,8 @@ const start = () => {
   // children. Never body itself: it stretches to fill the frame in quirks mode
   // or under `body { height: 100% }`, which ratchets the frame larger and never
   // lets it shrink back.
-  // ponytail: body's own bottom/right padding and margin are ignored — zero them
-  // if that gap matters, or wrap your content and mark it with data-iframe-size.
+  // Body's own bottom/right padding and margin fall outside the measurement —
+  // zero them if that gap matters, or mark a wrapper with data-iframe-size.
   const measure = () => {
     const marked = document.querySelectorAll(sizeSelector);
     const elements = marked.length ? marked : document.body.children;

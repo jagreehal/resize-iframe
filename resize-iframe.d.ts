@@ -45,11 +45,15 @@ export interface ParentIframe {
 /** Attributes of the <resize-iframe> element. */
 export interface ResizeIframeAttributes {
   src?: string;
+  /** Inline HTML. Prefer `withResizeChild(html)` from `resize-iframe/inject` so the frame can report its size. */
+  srcdoc?: string;
   title?: string;
   direction?: 'vertical' | 'horizontal' | 'both' | 'none';
   'offset-size'?: number | string;
   'min-h'?: string;
   'max-h'?: string;
+  /** Ms to wait before warning that the child script is missing. `0` silences. */
+  'warning-timeout'?: number | string;
   allow?: string;
   sandbox?: string;
   /** Whatever else the host framework puts on an element: class, ref, key. */

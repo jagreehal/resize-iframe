@@ -6,10 +6,26 @@
   "main": "resize-iframe.js",
   "module": "resize-iframe.js",
   "types": "resize-iframe.d.ts",
+  "exports": {
+    ".": {
+      "types": "./resize-iframe.d.ts",
+      "import": "./resize-iframe.js",
+      "default": "./resize-iframe.js"
+    },
+    "./inject": {
+      "types": "./inject.d.ts",
+      "import": "./inject.js",
+      "default": "./inject.js"
+    },
+    "./resize-iframe-child.js": "./resize-iframe-child.js"
+  },
   "files": [
     "resize-iframe.js",
     "resize-iframe-child.js",
     "resize-iframe.d.ts",
+    "inject.js",
+    "inject.d.ts",
+    "child-source.js",
     "CHANGELOG.md"
   ],
   "packageManager": "pnpm@11.21.0",
@@ -18,9 +34,12 @@
     "provenance": true
   },
   "scripts": {
+    "embed-child": "node scripts/embed-child.mjs",
+    "pretest": "pnpm embed-child",
+    "prepublishOnly": "pnpm embed-child",
     "test": "playwright test",
     "test:ui": "playwright test --ui",
-    "typecheck": "tsc --noEmit --strict --lib es2022,dom resize-iframe.d.ts",
+    "typecheck": "tsc --noEmit --strict --lib es2022,dom resize-iframe.d.ts inject.d.ts",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "changeset publish"

@@ -99,7 +99,9 @@ function connect(iframe, settings) {
 
 class ResizeIframe extends HTMLElement {
   static get observedAttributes() {
-    return ['src', 'min-h', 'max-h', 'allow', 'sandbox'];
+    // src / srcdoc last: setting either starts the navigation, and sandbox/allow
+    // have to be on the element before that or the first load runs without them.
+    return ['min-h', 'max-h', 'allow', 'sandbox', 'warning-timeout', 'srcdoc', 'src'];
   }
 
   connectedCallback() {
@@ -117,10 +119,14 @@ class ResizeIframe extends HTMLElement {
         this.attributeChangedCallback(name, null, this.getAttribute(name));
       }
     }
+    const warningTimeoutAttr = this.getAttribute('warning-timeout');
     iframeResize(
       {
         direction: this.getAttribute('direction') || DEFAULTS.direction,
         offsetSize: Number(this.getAttribute('offset-size')) || 0,
+        ...(warningTimeoutAttr !== null
+          ? { warningTimeout: Number(warningTimeoutAttr) }
+          : {}),
       },
       this.iframe
     );
@@ -132,6 +138,8 @@ class ResizeIframe extends HTMLElement {
 
   attributeChangedCallback(name, oldValue, newValue) {
     if (!this.iframe || newValue === null) return;
+    // srcdoc wins over src when both are set (HTML behaviour). Prefer one.
+    if (name === 'srcdoc') this.iframe.srcdoc = newValue;
     if (name === 'src') this.iframe.src = newValue;
     if (name === 'min-h') this.iframe.style.minHeight = newValue;
     if (name === 'max-h') this.iframe.style.maxHeight = newValue;
@@ -139,6 +147,7 @@ class ResizeIframe extends HTMLElement {
     // denied outright unless the frame carries allow="storage-access", and a
     // sandboxed frame also needs allow-storage-access-by-user-activation.
     if (name === 'allow' || name === 'sandbox') this.iframe.setAttribute(name, newValue);
+    // warning-timeout is read once, in connectedCallback.
   }
 
   get height() {

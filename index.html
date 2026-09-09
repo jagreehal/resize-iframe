@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>resize-iframe — iframes that size themselves to their content</title>
+<meta name="description" content="Iframes that size themselves to their content, cross-origin included. No build step, no dependencies, ~2kB.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%233b5bdb'/%3E%3Crect x='7' y='9' width='18' height='14' rx='2' fill='none' stroke='white' stroke-width='2'/%3E%3C/svg%3E">
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #fbfbfc; --panel: #fff; --ink: #16181d; --muted: #62666e;
+    --line: #e2e4e9; --accent: #3b5bdb; --code-bg: #f4f5f8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #101216; --panel: #171a1f; --ink: #e8eaee; --muted: #9aa0a8;
+            --line: #2b2f36; --accent: #91a7ff; --code-bg: #1d2027; }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 60rem; margin: 0 auto; padding: 0 20px; }
+  a { color: var(--accent); }
+
+  header { padding: 72px 0 40px; }
+  h1 { margin: 0 0 12px; font-size: clamp(2rem, 6vw, 3rem); letter-spacing: -0.02em; }
+  .tagline { margin: 0 0 8px; font-size: clamp(1.05rem, 2.6vw, 1.3rem); color: var(--muted); max-width: 34em; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; margin: 24px 0 0; list-style: none; padding: 0; }
+  .badges li { font-size: 13px; color: var(--muted); border: 1px solid var(--line); border-radius: 99px; padding: 4px 12px; }
+
+  section { padding: 40px 0; border-top: 1px solid var(--line); }
+  h2 { margin: 0 0 8px; font-size: 1.4rem; letter-spacing: -0.01em; }
+  h3 { margin: 32px 0 8px; font-size: 1rem; }
+  .lede { margin: 0 0 24px; color: var(--muted); max-width: 44em; }
+
+  .demo { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .demo-head {
+    display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between;
+    padding: 12px 16px; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--muted);
+  }
+  .demo-head strong { color: var(--ink); font-weight: 600; }
+  .readout { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .demo-body { padding: 16px; }
+  resize-iframe, iframe.demo-frame {
+    display: block; width: 100%; border: 1px dashed var(--line); border-radius: 8px;
+    background: var(--bg); transition: height 120ms ease-out;
+  }
+  iframe.demo-frame { height: 60px; }
+
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 14px; }
+  button, input[type=text] {
+    font: inherit; font-size: 14px; padding: 7px 13px; border: 1px solid var(--line);
+    border-radius: 8px; background: transparent; color: inherit;
+  }
+  button { cursor: pointer; }
+  button:hover { border-color: var(--accent); color: var(--accent); }
+  input[type=text] { min-width: 0; flex: 1 1 12rem; }
+  .srcdoc-label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  textarea {
+    display: block; width: 100%; margin-bottom: 14px; padding: 12px; resize: vertical;
+    border: 1px solid var(--line); border-radius: 8px; background: var(--code-bg); color: inherit;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; line-height: 1.6;
+  }
+  .note { margin: 12px 0 0; color: var(--muted); font-size: 14.5px; max-width: 44em; }
+  .log {
+    margin-top: 14px; padding: 10px 12px; border-radius: 8px; background: var(--code-bg);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; color: var(--muted);
+    white-space: pre-wrap; word-break: break-word;
+  }
+
+  pre {
+    margin: 0; padding: 16px; overflow-x: auto; background: var(--code-bg);
+    border: 1px solid var(--line); border-radius: 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13.5px; line-height: 1.6;
+  }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9em; }
+  p code, li code, td code { background: var(--code-bg); border-radius: 4px; padding: 1px 5px; }
+
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+  .grid div { border: 1px solid var(--line); border-radius: 10px; padding: 16px; background: var(--panel); }
+  .grid h3 { margin: 0 0 6px; }
+  .grid p { margin: 0; color: var(--muted); font-size: 14.5px; }
+
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 13px; color: var(--muted); font-weight: 600; }
+
+  footer { padding: 40px 0 72px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <h1>resize-iframe</h1>
+  <p class="tagline">Iframes that size themselves to their content — cross-origin included. No build step, no dependencies.</p>
+  <p><a href="https://github.com/jagreehal/resize-iframe">GitHub</a> · <a href="https://www.npmjs.com/package/resize-iframe">npm</a> · <a href="https://github.com/jagreehal/resize-iframe#readme">Docs</a></p>
+  <ul class="badges">
+    <li>~5 kB, two files</li>
+    <li>Zero dependencies</li>
+    <li>Plain iframe or custom element</li>
+    <li>Two-way messaging</li>
+    <li>srcdoc injection</li>
+    <li>Storage Access API</li>
+  </ul>
+</header>
+
+<main>
+
+<section class="wrap">
+  <h2>The custom element</h2>
+  <p class="lede">
+    Drop in <code>&lt;resize-iframe src="…"&gt;</code> and the frame tracks its content. The frames on this
+    page are sandboxed without <code>allow-same-origin</code>, so the browser gives them an opaque origin —
+    the parent genuinely cannot reach inside, exactly as with a third-party embed.
+  </p>
+
+  <div class="demo">
+    <div class="demo-head">
+      <span><strong>&lt;resize-iframe&gt;</strong> — height set by the child, capped at <code>max-h</code></span>
+      <span class="readout" id="height-a">waiting for the frame…</span>
+    </div>
+    <div class="demo-body">
+      <resize-iframe id="frame-a" src="demo/child.html" max-h="420px"
+                     sandbox="allow-scripts" title="Live resizing demo"></resize-iframe>
+      <div class="controls">
+        <button id="prove">Try to read the frame's document</button>
+        <button id="ping-a">Send a message into the frame</button>
+      </div>
+      <div class="log" id="log-a">Add or remove content inside the frame and watch the height above.</div>
+    </div>
+  </div>
+
+  <h3>The whole integration</h3>
+<pre><code>&lt;script type="module" src="resize-iframe.js"&gt;&lt;/script&gt;
+&lt;resize-iframe src="https://embed.example/widget" max-h="420px"&gt;&lt;/resize-iframe&gt;
+
+&lt;!-- and in the framed page --&gt;
+&lt;script src="resize-iframe-child.js"&gt;&lt;/script&gt;</code></pre>
+</section>
+
+<section class="wrap">
+  <h2>Or a plain iframe</h2>
+  <p class="lede">
+    Already have iframes on the page? <code>iframeResize()</code> takes a selector, an element, or nothing at
+    all (every iframe on the page), and hands back a handle with <code>sendMessage()</code> and
+    <code>disconnect()</code>.
+  </p>
+
+  <div class="demo">
+    <div class="demo-head">
+      <span><strong>iframeResize()</strong> — with callbacks and two-way messaging</span>
+      <span class="readout" id="height-b">waiting for the frame…</span>
+    </div>
+    <div class="demo-body">
+      <iframe class="demo-frame" id="frame-b" src="demo/child.html"
+              sandbox="allow-scripts" title="Messaging demo"></iframe>
+      <div class="controls">
+        <input type="text" id="message" value="ping from the parent" aria-label="Message to send into the frame">
+        <button id="send-b">Send into the frame</button>
+        <button id="toggle-b">Disconnect</button>
+      </div>
+      <div class="log" id="log-b">Messages between the two pages show up here.</div>
+    </div>
+  </div>
+
+  <h3>The code behind that frame</h3>
+<pre><code>import { iframeResize } from 'resize-iframe';
+
+const [frame] = iframeResize({
+  direction: 'vertical',       // 'horizontal' | 'both' | 'none'
+  offsetSize: 0,
+  onResized: ({ height }) =&gt; console.log(height),
+  onMessage: ({ message }) =&gt; console.log(message),
+}, '#frame-b');
+
+frame.sendMessage('ping from the parent');
+frame.disconnect();            // before you remove the iframe</code></pre>
+</section>
+
+<section class="wrap">
+  <h2>Inline HTML you generate yourself</h2>
+  <p class="lede">
+    When the host builds the framed HTML — a report embed, a quiz, model output —
+    there is no page author to add the child script. <code>withResizeChild()</code> inlines it for you, so
+    the document you hand to <code>srcdoc</code> is self-contained: no CDN, no path back to the package.
+  </p>
+
+  <div class="demo">
+    <div class="demo-head">
+      <span><strong>withResizeChild()</strong> — edit the HTML, the sandboxed frame follows</span>
+      <span class="readout" id="height-c">waiting for the frame…</span>
+    </div>
+    <div class="demo-body">
+      <label class="srcdoc-label" for="srcdoc">HTML you generate</label>
+      <textarea id="srcdoc" spellcheck="false" rows="7"></textarea>
+      <resize-iframe id="frame-c" sandbox="allow-scripts" title="srcdoc demo"></resize-iframe>
+      <div class="log" id="log-c">Type in the box — every keystroke rebuilds the document and the frame re-measures.</div>
+    </div>
+  </div>
+
+  <h3>What that takes</h3>
+<pre><code>import 'resize-iframe';
+import { withResizeChild } from 'resize-iframe/inject';
+
+const frame = document.createElement('resize-iframe');
+frame.setAttribute('sandbox', 'allow-scripts');   // opaque origin, keep it
+frame.setAttribute('srcdoc', withResizeChild(generatedHtml));
+document.body.append(frame);</code></pre>
+  <p class="note">
+    Idempotent, and a fragment gets wrapped in a minimal document with its margin zeroed — so even a bare
+    string of text has a box to be measured in. Remote <code>src</code> pages are untouched: only that
+    page's author can load the child script.
+  </p>
+</section>
+
+<section class="wrap">
+  <h2>Why it needs two files</h2>
+  <p class="lede">
+    A cross-origin parent cannot measure the page it frames — the browser will not let it. So the framed page
+    measures itself and posts the number up. That is the whole mechanism.
+  </p>
+  <div class="grid">
+    <div>
+      <h3>Measures the right box</h3>
+      <p>The child measures the bottom edge of body's children, never body itself, so a frame that grew can shrink back again.</p>
+    </div>
+    <div>
+      <h3>Catches late changes</h3>
+      <p>A ResizeObserver picks up reflow from images and fonts; a MutationObserver picks up DOM and style changes, batched to one measurement per frame.</p>
+    </div>
+    <div>
+      <h3>Ignores everyone else</h3>
+      <p><code>event.source</code> is set by the browser and cannot be forged, so only the frame's own window is heard — no origin allowlist to configure.</p>
+    </div>
+    <div>
+      <h3>Handles partitioned storage</h3>
+      <p>Third-party frames get partitioned cookies until the user grants access. The child exposes <code>requestStorageAccess()</code> and reports the result to the parent.</p>
+    </div>
+  </div>
+</section>
+
+<section class="wrap">
+  <h2>API at a glance</h2>
+  <table>
+    <thead><tr><th>In the parent</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><code>iframeResize(options, target)</code></td><td>Connect one iframe, a selector, a list, or every iframe on the page.</td></tr>
+      <tr><td><code>&lt;resize-iframe src&gt;</code></td><td>Same thing as an element. Also takes <code>srcdoc</code>, <code>min-h</code>, <code>max-h</code>, <code>direction</code>, <code>offset-size</code>, <code>warning-timeout</code>, <code>allow</code>, <code>sandbox</code>.</td></tr>
+      <tr><td><code>withResizeChild(html)</code></td><td>From <code>resize-iframe/inject</code>. Inlines the child script into HTML you own, ready for <code>srcdoc</code>.</td></tr>
+      <tr><td><code>onReady</code> / <code>onResized</code></td><td>Callbacks, or listen for the <code>ready</code> and <code>resize</code> events on the iframe.</td></tr>
+      <tr><td><code>onMessage</code> / <code>sendMessage()</code></td><td>Two-way messaging on an envelope other postMessage traffic will not match.</td></tr>
+      <tr><td><code>onStorageAccess</code></td><td>Fires when the framed page reports whether it has unpartitioned storage.</td></tr>
+      <tr><td><code>disconnect()</code></td><td>Removes the listener. Call it before removing the iframe.</td></tr>
+    </tbody>
+  </table>
+  <table style="margin-top: 24px">
+    <thead><tr><th>In the framed page</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><code>parentIframe.sendMessage()</code></td><td>Send up to the embedder.</td></tr>
+      <tr><td><code>parentIframe.onMessage = fn</code></td><td>Receive what the embedder sends down.</td></tr>
+      <tr><td><code>parentIframe.resize()</code></td><td>Nudge a measurement, for the rare change neither observer sees.</td></tr>
+      <tr><td><code>parentIframe.autoResize(false)</code></td><td>Stop and start automatic sizing.</td></tr>
+      <tr><td><code>parentIframe.requestStorageAccess()</code></td><td>Ask for unpartitioned storage. Must run from a click inside the frame.</td></tr>
+      <tr><td><code>data-iframe-size</code></td><td>Mark the elements to measure, instead of body's children.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+</main>
+
+<footer class="wrap">
+  MIT licensed. Built by <a href="https://jagreehal.com">Jag Reehal</a>. Every frame on this page is running the
+  library straight from this repo — <a href="https://github.com/jagreehal/resize-iframe">read the source</a>.
+</footer>
+
+<script type="module" src="./resize-iframe.js"></script>
+<script type="module">
+  import { iframeResize } from './resize-iframe.js';
+  import { withResizeChild } from './inject.js';
+
+  const say = (id, text) => { document.getElementById(id).textContent = text; };
+
+  // The element demo: it connects itself, so we just listen to the events it emits.
+  const frameA = document.getElementById('frame-a');
+  frameA.addEventListener('resize', (event) => {
+    say('height-a', `height: ${event.detail.height}px`);
+  });
+  frameA.addEventListener('frame-message', (event) => {
+    say('log-a', `The framed page said: ${event.detail}`);
+  });
+  document.getElementById('ping-a').onclick = () => {
+    frameA.sendMessage(`hello from the parent, ${new Date().toLocaleTimeString()}`);
+    say('log-a', 'Sent a message down into the frame — look inside for it.');
+  };
+  document.getElementById('prove').onclick = () => {
+    const iframe = frameA.shadowRoot.querySelector('iframe');
+    let result;
+    try {
+      result = String(iframe.contentDocument);
+    } catch (error) {
+      result = `threw ${error.name}`;
+    }
+    say('log-a', `iframe.contentDocument → ${result}\nNo way in from out here, and the sizing works anyway.`);
+  };
+
+  // The plain-iframe demo, wired by hand.
+  const [frameB] = iframeResize({
+    onResized: ({ height }) => say('height-b', `height: ${height}px`),
+    onMessage: ({ message }) => say('log-b', `The framed page said: ${message}`),
+  }, '#frame-b');
+
+  document.getElementById('send-b').onclick = () => {
+    frameB.sendMessage(document.getElementById('message').value);
+    say('log-b', 'Sent into the frame — look for it inside.');
+  };
+
+  // The srcdoc demo: HTML the host owns, so the child script goes in from here.
+  const frameC = document.getElementById('frame-c');
+  const srcdoc = document.getElementById('srcdoc');
+  srcdoc.value = [
+    '<style>',
+    '  body { font: 15px/1.5 system-ui, sans-serif; }',
+    '  .card { padding: 16px; border: 1px solid #ccc; border-radius: 8px; }',
+    '</style>',
+    '<div class="card">',
+    '  <h3>Generated on the fly</h3>',
+    '  <p>Add lines here and the frame grows to fit.</p>',
+    '</div>',
+  ].join('\n');
+
+  frameC.addEventListener('resize', (event) => {
+    say('height-c', `height: ${event.detail.height}px`);
+  });
+
+  let pending;
+  const render = () => {
+    frameC.setAttribute('srcdoc', withResizeChild(srcdoc.value));
+    say('log-c', `Document rebuilt — ${withResizeChild(srcdoc.value).length} bytes, child script and all.`);
+  };
+  srcdoc.oninput = () => {
+    clearTimeout(pending);
+    pending = setTimeout(render, 250); // a reload per keystroke is a lot of reloads
+  };
+  render();
+
+  let connected = true;
+  document.getElementById('toggle-b').onclick = (event) => {
+    if (connected) {
+      frameB.disconnect();
+      say('log-b', 'Disconnected. Resize the content inside the frame — the height is frozen now.');
+      event.target.textContent = 'Reconnect';
+    } else {
+      location.reload(); // a reconnect helper would be one more API for one demo button
+    }
+    connected = !connected;
+  };
+</script>
+</body>
+</html>

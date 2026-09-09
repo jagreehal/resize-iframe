@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Framed page — resize-iframe demo</title>
+<style>
+  :root { color-scheme: light dark; --line: #d9dbe0; --muted: #62666e; --accent: #3b5bdb; }
+  @media (prefers-color-scheme: dark) { :root { --line: #33363d; --muted: #9aa0a8; --accent: #91a7ff; } }
+  body { margin: 0; font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { padding: 20px; }
+  h2 { margin: 0 0 4px; font-size: 15px; }
+  p { margin: 0 0 12px; }
+  .muted { color: var(--muted); font-size: 13px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+  button { font: inherit; padding: 6px 12px; border: 1px solid var(--line); border-radius: 7px; background: transparent; color: inherit; cursor: pointer; }
+  button:hover { border-color: var(--accent); color: var(--accent); }
+  input { font: inherit; padding: 6px 10px; border: 1px solid var(--line); border-radius: 7px; background: transparent; color: inherit; min-width: 0; flex: 1 1 8rem; }
+  .card { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; margin: 8px 0 0; }
+  img { display: block; width: 100%; max-width: 320px; border-radius: 8px; }
+</style>
+</head>
+<body>
+<main data-iframe-size>
+  <h2>I am the framed page</h2>
+  <p class="muted">Nothing here sets a height. The frame around me follows whatever this content does.</p>
+
+  <div class="row">
+    <button id="add">Add a paragraph</button>
+    <button id="remove">Remove one</button>
+    <button id="image">Load a late image</button>
+  </div>
+
+  <div id="content"></div>
+
+  <div class="row">
+    <input id="text" value="hello from inside" aria-label="Message to send to the parent page">
+    <button id="send">Send to parent</button>
+  </div>
+  <div class="card muted" id="inbox">No message from the parent yet.</div>
+</main>
+
+<script src="../resize-iframe-child.js"></script>
+<script>
+  const content = document.getElementById('content');
+  let n = 0;
+
+  document.getElementById('add').onclick = () => {
+    const p = document.createElement('p');
+    p.textContent = `Paragraph ${++n}. Added after load, with no height set anywhere and no resize call — a MutationObserver in the child script notices, measures, and posts the new size up.`;
+    content.append(p);
+  };
+
+  document.getElementById('remove').onclick = () => content.lastElementChild?.remove();
+
+  document.getElementById('image').onclick = (event) => {
+    const img = new Image();
+    // Inline SVG so the demo works offline: an image landing after layout is the
+    // classic case a ResizeObserver catches and a one-shot measurement misses.
+    img.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180"><rect width="320" height="180" rx="12" fill="#3b5bdb"/><text x="160" y="98" font-family="sans-serif" font-size="18" fill="white" text-anchor="middle">image loaded late</text></svg>'
+    );
+    img.alt = 'Placeholder image, loaded after the page had already been measured';
+    content.append(img);
+    event.target.disabled = true;
+  };
+
+  document.getElementById('send').onclick = () => {
+    parentIframe.sendMessage(document.getElementById('text').value);
+  };
+
+  parentIframe.onMessage = (message) => {
+    document.getElementById('inbox').textContent = `Parent said: ${message}`;
+  };
+</script>
+</body>
+</html>

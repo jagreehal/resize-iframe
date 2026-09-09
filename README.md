@@ -7,8 +7,11 @@ each page, no build step, no dependencies, MIT.
 - ↔️ Vertical, horizontal, or both
 - 🔒 Messages matched against the frame's own window, which cannot be forged
 - 🍪 Storage Access API support for third-party embeds
-- 🧩 Use `iframeResize()` or the `<resize-iframe>` element
-- 📦 ~5KB unminified, across both files
+- 🧩 Use `iframeResize()`, `<resize-iframe>`, or `withResizeChild` for srcdoc
+- 📦 ~6KB unminified, across the files you ship
+
+**[Live demo →](https://jagreehal.github.io/resize-iframe/)** — sandboxed, opaque-origin frames
+resizing, messaging, and refusing to be read from the parent.
 
 ## Installation
 
@@ -65,6 +68,35 @@ Or use the element, which calls `iframeResize` for you:
 That alone auto-resizes the frame. A cross-origin parent cannot measure your
 content, so without this script nothing happens — the parent logs a warning after
 five seconds saying exactly that.
+
+### Inline HTML (`srcdoc`) the host owns
+
+When you build the framed HTML yourself — a report embed, a quiz, skill output —
+put the child script inside it with `withResizeChild` and pass the result as
+`srcdoc`. No CDN, no relative path, the document stays self-contained:
+
+```html
+<script type="module">
+  import 'resize-iframe';
+  import { withResizeChild } from 'resize-iframe/inject';
+
+  const frame = document.createElement('resize-iframe');
+  frame.setAttribute('sandbox', 'allow-scripts'); // opaque origin; keep it
+  frame.setAttribute('min-h', '200px');
+  frame.setAttribute('srcdoc', withResizeChild(generatedHtml));
+  document.body.append(frame);
+</script>
+```
+
+`withResizeChild` is idempotent, inserts the script before `</body>`, and wraps
+fragments in a minimal document — margin zeroed, content in a box — so even a bare
+string of text has something measurable around it. The same module exports
+`childScriptTag()` and `childScriptSource` if you would rather place the script
+yourself. Remote `src` pages are unchanged: only that page's author can include the
+child script.
+
+Working with an AI agent? `.claude/skills/resize-iframe/` teaches it which of these
+shapes to reach for.
 
 The script tag takes two optional attributes:
 
@@ -162,11 +194,13 @@ turned off for.
 | Attribute     | Default            | Description                              |
 | ------------- | ------------------ | ---------------------------------------- |
 | `src`         | —                  | URL to embed                             |
+| `srcdoc`      | —                  | Inline HTML (prefer `withResizeChild`)   |
 | `title`       | `Embedded content` | Accessible name for the iframe           |
 | `direction`   | `vertical`         | As above                                 |
 | `offset-size` | `0`                | As above                                 |
 | `min-h`       | —                  | Minimum height constraint                |
 | `max-h`       | —                  | Maximum height constraint                |
+| `warning-timeout` | `5000`         | Ms before missing-child warning; `0` off |
 | `allow`       | —                  | Passed through, e.g. `storage-access`    |
 | `sandbox`     | —                  | Passed through                           |
 
@@ -233,7 +267,7 @@ pnpm exec playwright install
 pnpm test
 ```
 
-34 Playwright specs across Chromium, Firefox and WebKit. The suite serves the
+42 Playwright specs across Chromium, Firefox and WebKit. The suite serves the
 parent page and the child pages from two different origins — `localhost` and
 `127.0.0.1`, which are cross-*site*, not merely cross-origin — so every test runs
 against the same partitioning and `contentDocument` restrictions as production.
