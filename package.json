@@ -12,6 +12,11 @@
       "import": "./resize-iframe.js",
       "default": "./resize-iframe.js"
     },
+    "./element": {
+      "types": "./element.d.ts",
+      "import": "./element.js",
+      "default": "./element.js"
+    },
     "./inject": {
       "types": "./inject.d.ts",
       "import": "./inject.js",
@@ -23,6 +28,8 @@
     "resize-iframe.js",
     "resize-iframe-child.js",
     "resize-iframe.d.ts",
+    "element.js",
+    "element.d.ts",
     "inject.js",
     "inject.d.ts",
     "child-source.js",
@@ -39,7 +46,7 @@
     "prepublishOnly": "pnpm embed-child",
     "test": "playwright test",
     "test:ui": "playwright test --ui",
-    "typecheck": "tsc --noEmit --strict --lib es2022,dom resize-iframe.d.ts inject.d.ts",
+    "typecheck": "tsc --noEmit --strict --lib es2022,dom resize-iframe.d.ts element.d.ts inject.d.ts",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "changeset publish"
