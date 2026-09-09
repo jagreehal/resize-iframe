@@ -1,6 +1,6 @@
 {
   "name": "resize-iframe",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Iframes that size themselves to their content, cross-origin included. No build step, no dependencies.",
   "type": "module",
   "main": "resize-iframe.js",
